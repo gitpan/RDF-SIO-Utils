@@ -8,5 +8,4 @@ dist.ini
 lib/RDF/SIO/Utils.pm
 lib/RDF/SIO/Utils/Constants.pm
 lib/RDF/SIO/Utils/Trine.pm
-lib/RDF/SIO/Utils/readme_java_api.txt
 t/Utils.t

@@ -1,7 +1,7 @@
 #!perl -w
 package RDF::SIO::Utils::Constants;
 BEGIN {
-  $RDF::SIO::Utils::Constants::VERSION = '0.001';
+  $RDF::SIO::Utils::Constants::VERSION = '0.002';
 }
 
 use strict;

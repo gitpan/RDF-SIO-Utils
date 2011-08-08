@@ -1,6 +1,6 @@
 package RDF::SIO::Utils;
 BEGIN {
-  $RDF::SIO::Utils::VERSION = '0.001';
+  $RDF::SIO::Utils::VERSION = '0.002';
 }
 use strict;
 use Carp;
@@ -17,7 +17,7 @@ my $xsd = "http://www.w3.org/2001/XMLSchema#";
 
 =head1 NAME
 
-SIO::Utils - tools for working with the SIO ontology
+RDF::SIO::Utils - tools for working with the SIO ontology
 
 =head1 SYNOPSIS
 
@@ -25,7 +25,7 @@ SIO::Utils - tools for working with the SIO ontology
 
  my $SIO = RDF::SIO::Utils->new();
  
- # auto created RDF::Utils::Trine is there
+ # auto created RDF::SIO::Utils::Trine is there
  my $m = $SIO->Trine->temporary_model(); 
  
  # create a subject to execute annotation and parsing on
