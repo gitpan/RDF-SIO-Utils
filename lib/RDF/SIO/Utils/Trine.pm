@@ -1,6 +1,9 @@
 package RDF::SIO::Utils::Trine;
+{
+  $RDF::SIO::Utils::Trine::VERSION = '0.003';
+}
 BEGIN {
-  $RDF::SIO::Utils::Trine::VERSION = '0.002';
+  $RDF::SIO::Utils::Trine::VERSION = '0.003';
 }
 use strict;
 use Carp;
@@ -8,6 +11,7 @@ use RDF::Trine;
 use RDF::Trine::Node::Resource;
 use RDF::Trine::Node::Literal;
 use RDF::Trine::Statement;
+use RDF::Trine::Statement::Quad;
 
 
 use vars qw($AUTOLOAD @ISA);

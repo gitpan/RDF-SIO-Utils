@@ -1,6 +1,9 @@
 package RDF::SIO::Utils;
+{
+  $RDF::SIO::Utils::VERSION = '0.003';
+}
 BEGIN {
-  $RDF::SIO::Utils::VERSION = '0.002';
+  $RDF::SIO::Utils::VERSION = '0.003';
 }
 use strict;
 use Carp;
@@ -211,6 +214,7 @@ sub new {
 			    then enter its xsd:type in turtle syntax
 			    (e.g. valueType='^^int')
 		unit - optional, URI to a Unit Ontology type, or a string
+		context - optional, URI of the context (for n-quads and named graphs)
  Description:   Creates the following structure:
  
                    node
@@ -235,14 +239,26 @@ sub addAttribute {
 	my $attribute_type = $args{attributeType};  # specification of what "type" of object we have
 	my $value_type = $args{valueType};  # specification of what "type" of value we have string, non-string, or OWL class
 	my $pred = $args{predicate};   # what is the predicate connecting this attribute to the subject node?
+	my $context = $args{context};
 
+	
 	my $attribute;  # the URI of the attribute node as a Trine
 	my $predicate;  # the URI of the predicate, as a Trine
 	my $value;   # literal value as a trine
 	my $classType;  # the rdf:type of the attributeID ($attribute_type) as a Trine
-	
+
 	# create a trine spewer
 	my $T = $self->Trine;
+
+	# deal with context first
+	if ($context && !($context=~ /^http:/)){
+		$self->error_message("your context, if provided, must be a URI.");
+		return 0;
+	}
+	if ($context){
+		$context = $T->iri($context);
+	}
+
 	
 	# deal with the attribute node - need everything as a Trine before we start building he model
 	
@@ -316,7 +332,7 @@ sub addAttribute {
 	
 
 
-	&_updateModel($T, $model, $subject, $predicate, $attribute, $classType, $value, $unit );
+	&_updateModel($T, $model, $subject, $predicate, $attribute, $classType, $value, $unit, $context );
 	
 	return $attribute;
 	
@@ -341,6 +357,7 @@ sub addAttribute {
 		valueType - required, values xsd:type in turtle syntax
 			    (e.g. valueType='^^int')
 		unit - optional, URI to a Unit Ontology type, or a string
+		context - optional, URI of the named graph for n-quads
  Description:   Creates the following structure:
  
                    node
@@ -365,6 +382,7 @@ sub addMeasurement {
 	my $attribute_type = SIO_MEASUREMENT_VALUE;  # specification of what "type" of object we have
 	my $value_type = $args{valueType};  # specification of what "type" of value we have string, non-string, or OWL class
 	my $pred = SIO_HAS_MEASUREMENT_VALUE;   # what is the predicate connecting this attribute to the subject node?
+	my $context = $args{context};
 
 	unless ($value_type =~ /^\^\^/){
 		$self->error_message("SIO only allows ^^int, ^^float, or ^^double as the types of values for measurements.");
@@ -386,6 +404,7 @@ sub addMeasurement {
 		attributeType => $attribute_type,
 		valueType => $value_type,
 		predicate => $pred,
+		context => $context,
 	);
 	
 	return $return;
@@ -634,7 +653,7 @@ sub _addStatementsToModel {
 }
 
 sub _updateModel{
-	my ($T, $model, $subject, $predicate, $attribute, $classType, $value, $unit ) = @_;
+	my ($T, $model, $subject, $predicate, $attribute, $classType, $value, $unit, $context ) = @_;
 	my $rdfType = $T->iri(RDF_TYPE);
 	my $SIO_ATTR = $T->iri(SIO_ATTRIBUTE);
 	my $hasUnit = $T->iri(SIO_HAS_UNIT);
@@ -642,21 +661,42 @@ sub _updateModel{
 	my $hasAttr = $T->iri(SIO_HAS_ATTR);  # don't know if we should put this on also... for those without reasoners??
 
 	my @statements;
-	
-	push @statements, $T->statement($subject, $predicate, $attribute);
+
+	if ($context){
+		push @statements, RDF::Trine::Statement::Quad->new($subject, $predicate, $attribute, $context);
+	} else {
+		push @statements, $T->statement($subject, $predicate, $attribute);
+	}
 	
 	unless ( $predicate->equal($hasAttr) ){
-		push @statements, $T->statement($subject, $hasAttr, $attribute);
+		if ($context){
+			push @statements, RDF::Trine::Statement::Quad->new($subject, $hasAttr, $attribute, $context);
+		} else {
+			push @statements, $T->statement($subject, $hasAttr, $attribute);		
+		}
 	}
-	push @statements, $T->statement($attribute, $rdfType, $classType);
-	push @statements, $T->statement($attribute, $rdfType, $SIO_ATTR);
+	if ($context){
+		push @statements, RDF::Trine::Statement::Quad->new($attribute, $rdfType, $classType, $context);
+		push @statements, RDF::Trine::Statement::Quad->new($attribute, $rdfType, $SIO_ATTR, $context);	
+	} else {
+		push @statements, $T->statement($attribute, $rdfType, $classType);
+		push @statements, $T->statement($attribute, $rdfType, $SIO_ATTR);
+	}
 
 	if ($value){
-		push @statements, $T->statement($attribute, $hasValue, $value);
+		if ($context){
+			push @statements, RDF::Trine::Statement::Quad->new($attribute, $hasValue, $value, $context);
+		} else {
+			push @statements, $T->statement($attribute, $hasValue, $value);
+		}
 	}
 	
 	if ($unit){
-		push @statements, $T->statement($attribute, $hasUnit, $unit);
+		if ($context){
+			push @statements, RDF::Trine::Statement::Quad->new($attribute, $hasUnit, $unit, $context);
+		}else {
+			push @statements, $T->statement($attribute, $hasUnit, $unit);
+		}
 	}
 
 	&_addStatementsToModel($model, \@statements);
